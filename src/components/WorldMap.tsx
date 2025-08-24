@@ -1,12 +1,21 @@
 import { useState } from 'react';
-import { Search, Users, Crown, MapPin, Filter, Globe } from 'lucide-react';
+import { Users, Crown, MapPin, Filter, Globe, Zap, TrendingUp, Building, Flag } from 'lucide-react';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import futuristicWorldMap from '@/assets/futuristic-world-map.jpg';
-import { worldCities, countries, continents, searchCities, getCitiesByContinent, getCitiesByCountry, type City } from '@/data/worldData';
+import InteractiveSearch from './InteractiveSearch';
+import { 
+  completeWorldDatabase, 
+  getAllCities, 
+  getCitiesByContinent, 
+  getCitiesByCountry, 
+  getCountriesByContinent,
+  getCryptoFriendlyCities,
+  type CityData, 
+  type CountryData 
+} from '@/data/completeWorldData';
 
 interface User {
   name: string;
@@ -14,23 +23,19 @@ interface User {
   referrals: number;
 }
 
+const continents = ['North America', 'South America', 'Europe', 'Asia', 'Africa', 'Oceania'];
+
 const WorldMap = () => {
-  const [selectedTerritory, setSelectedTerritory] = useState<City | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTerritory, setSelectedTerritory] = useState<CityData | null>(null);
   const [selectedContinent, setSelectedContinent] = useState<string>('all');
   const [selectedCountry, setSelectedCountry] = useState<string>('all');
-  const [cityFilter, setCityFilter] = useState<'all' | 'elections' | 'governors'>('all');
+  const [cityFilter, setCityFilter] = useState<'all' | 'elections' | 'governors' | 'crypto'>('all');
   const [user] = useState<User>({ name: 'John Doe', tier: 'platinum', referrals: 150 });
   const [zoomLevel, setZoomLevel] = useState(1);
 
-  // Filter cities based on search and filters
-  const getFilteredCities = (): City[] => {
-    let cities = worldCities;
-
-    // Apply search filter
-    if (searchTerm) {
-      cities = searchCities(searchTerm);
-    }
+  // Filter cities based on filters
+  const getFilteredCities = (): CityData[] => {
+    let cities = getAllCities();
 
     // Apply continent filter
     if (selectedContinent !== 'all') {
@@ -47,6 +52,8 @@ const WorldMap = () => {
       cities = cities.filter(city => city.hasElection);
     } else if (cityFilter === 'governors') {
       cities = cities.filter(city => city.governor);
+    } else if (cityFilter === 'crypto') {
+      cities = cities.filter(city => city.cryptoFriendly);
     }
 
     return cities;
@@ -54,23 +61,29 @@ const WorldMap = () => {
 
   const filteredCities = getFilteredCities();
 
-  const handleTerritoryClick = (city: City) => {
+  const handleCitySelect = (city: CityData) => {
     setSelectedTerritory(city);
     setZoomLevel(2);
   };
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (filteredCities.length > 0) {
-      handleTerritoryClick(filteredCities[0]);
+  const handleCountrySelect = (country: CountryData) => {
+    // Focus on the first major city in the country
+    const majorCity = country.cities.find(city => city.tier === 'metropolis') || country.cities[0];
+    if (majorCity) {
+      handleCitySelect(majorCity);
     }
+  };
+
+  const handleTerritoryClick = (city: CityData) => {
+    setSelectedTerritory(city);
+    setZoomLevel(2);
   };
 
   const getAvailableCountries = () => {
     if (selectedContinent === 'all') {
-      return countries;
+      return completeWorldDatabase;
     }
-    return countries.filter(country => country.continent === selectedContinent);
+    return getCountriesByContinent(selectedContinent);
   };
 
   const getTierColor = (tier: string) => {
@@ -81,6 +94,14 @@ const WorldMap = () => {
       default: return 'from-muted to-muted/80';
     }
   };
+
+  const getCryptoStats = () => {
+    const cryptoCities = getCryptoFriendlyCities();
+    const cryptoCountries = completeWorldDatabase.filter(c => c.cryptoRegulation === 'friendly');
+    return { cities: cryptoCities.length, countries: cryptoCountries.length };
+  };
+
+  const cryptoStats = getCryptoStats();
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
@@ -116,6 +137,14 @@ const WorldMap = () => {
             >
               {user.tier.toUpperCase()} MEMBER
             </Badge>
+            
+            {/* Crypto Stats */}
+            <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-gold/10 border border-gold/30 rounded-full">
+              <Zap className="w-4 h-4 text-gold animate-hologram" />
+              <span className="text-xs text-gold font-medium">
+                {cryptoStats.cities} Crypto Cities • {cryptoStats.countries} Friendly Nations
+              </span>
+            </div>
           </div>
           
           <div className="flex items-center gap-4">
@@ -132,21 +161,14 @@ const WorldMap = () => {
       {/* Enhanced Search and Filter Bar */}
       <div className="relative z-10 p-6 bg-gradient-to-r from-card/50 to-card/30 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto space-y-4">
-          <form onSubmit={handleSearchSubmit} className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 w-4 h-4 text-primary animate-hologram" />
-              <Input
-                placeholder="Search cities, countries, or continents..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-card/80 border-primary/30 focus:border-primary focus:ring-primary/20 transition-all duration-300"
-              />
-            </div>
-            <Button type="submit" variant="election" className="shadow-lg shadow-election/30">
-              Search
-            </Button>
-          </form>
-          
+          {/* Interactive Search */}
+          <div className="max-w-2xl mx-auto">
+            <InteractiveSearch 
+              onCitySelect={handleCitySelect}
+              onCountrySelect={handleCountrySelect}
+              placeholder="🔍 Search 200+ cities & countries worldwide..."
+            />
+          </div>
           <div className="flex gap-4 items-center flex-wrap">
             <div className="flex items-center gap-2">
               <Filter className="w-4 h-4 text-primary" />
@@ -154,10 +176,10 @@ const WorldMap = () => {
             </div>
             
             <Select value={selectedContinent} onValueChange={setSelectedContinent}>
-              <SelectTrigger className="w-48 bg-card/80 border-primary/30">
+              <SelectTrigger className="w-48 bg-card/80 border-primary/30 backdrop-blur-md">
                 <SelectValue placeholder="All Continents" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-card/95 backdrop-blur-md border-primary/30 z-50">
                 <SelectItem value="all">All Continents</SelectItem>
                 {continents.map(continent => (
                   <SelectItem key={continent} value={continent}>{continent}</SelectItem>
@@ -166,10 +188,10 @@ const WorldMap = () => {
             </Select>
 
             <Select value={selectedCountry} onValueChange={setSelectedCountry}>
-              <SelectTrigger className="w-48 bg-card/80 border-primary/30">
+              <SelectTrigger className="w-48 bg-card/80 border-primary/30 backdrop-blur-md">
                 <SelectValue placeholder="All Countries" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-card/95 backdrop-blur-md border-primary/30 z-50">
                 <SelectItem value="all">All Countries</SelectItem>
                 {getAvailableCountries().map(country => (
                   <SelectItem key={country.id} value={country.name}>{country.name}</SelectItem>
@@ -177,20 +199,26 @@ const WorldMap = () => {
               </SelectContent>
             </Select>
 
-            <Select value={cityFilter} onValueChange={(value: 'all' | 'elections' | 'governors') => setCityFilter(value)}>
-              <SelectTrigger className="w-48 bg-card/80 border-primary/30">
+            <Select value={cityFilter} onValueChange={(value: 'all' | 'elections' | 'governors' | 'crypto') => setCityFilter(value)}>
+              <SelectTrigger className="w-48 bg-card/80 border-primary/30 backdrop-blur-md">
                 <SelectValue placeholder="All Cities" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-card/95 backdrop-blur-md border-primary/30 z-50">
                 <SelectItem value="all">All Cities</SelectItem>
-                <SelectItem value="elections">Active Elections</SelectItem>
-                <SelectItem value="governors">Has Governor</SelectItem>
+                <SelectItem value="elections">🗳️ Active Elections</SelectItem>
+                <SelectItem value="governors">👑 Has Governor</SelectItem>
+                <SelectItem value="crypto">⚡ Crypto Friendly</SelectItem>
               </SelectContent>
             </Select>
 
-            <Badge variant="outline" className="text-primary border-primary/30">
-              {filteredCities.length} cities found
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="text-primary border-primary/30">
+                🌍 {filteredCities.length} cities
+              </Badge>
+              <Badge variant="outline" className="text-accent border-accent/30">
+                🏛️ {completeWorldDatabase.length} countries
+              </Badge>
+            </div>
           </div>
         </div>
       </div>
@@ -203,9 +231,14 @@ const WorldMap = () => {
               <CardTitle className="flex items-center gap-2 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 <Globe className="w-5 h-5 text-primary animate-glow-pulse" />
                 Global Electoral Map
-                <Badge variant="outline" className="ml-auto text-xs">
-                  {filteredCities.length} cities
-                </Badge>
+                <div className="flex items-center gap-2 ml-auto">
+                  <Badge variant="outline" className="text-xs border-primary/50">
+                    {filteredCities.length} cities
+                  </Badge>
+                  <Badge variant="outline" className="text-xs border-gold/50 text-gold">
+                    {cryptoStats.cities} crypto-friendly
+                  </Badge>
+                </div>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -251,9 +284,14 @@ const WorldMap = () => {
                     {/* Inner glow effect */}
                     <div className="absolute inset-1 rounded-full bg-white/20 animate-hologram"></div>
                     
-                    {/* Population indicator */}
+                    {/* Population indicator for metropolis */}
                     {city.tier === 'metropolis' && (
                       <div className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full animate-glow-pulse"></div>
+                    )}
+                    
+                    {/* Crypto indicator */}
+                    {city.cryptoFriendly && (
+                      <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-gold rounded-full animate-hologram"></div>
                     )}
                   </button>
                 ))}
@@ -266,10 +304,18 @@ const WorldMap = () => {
                       top: `${selectedTerritory.coordinates.y}%`,
                     }}
                   >
-                    <div className="text-sm font-semibold text-primary">{selectedTerritory.name}</div>
+                    <div className="text-sm font-semibold text-primary flex items-center gap-2">
+                      {selectedTerritory.name}
+                      {selectedTerritory.cryptoFriendly && (
+                        <Zap className="w-3 h-3 text-gold animate-hologram" />
+                      )}
+                    </div>
                     <div className="text-xs text-muted-foreground">{selectedTerritory.country}</div>
-                    <div className="text-xs text-accent">
-                      {selectedTerritory.applicants} applicants • {selectedTerritory.population.toLocaleString()} population
+                    <div className="text-xs text-accent flex items-center gap-1">
+                      <span>{selectedTerritory.applicants} applicants</span>
+                      <span>•</span>
+                      <span>{selectedTerritory.population.toLocaleString()}</span>
+                      {selectedTerritory.isCapital && <span>• Capital</span>}
                     </div>
                     <Badge variant="outline" className={`mt-1 text-xs ${selectedTerritory.tier === 'metropolis' ? 'border-election text-election' : selectedTerritory.tier === 'major' ? 'border-gold text-gold' : 'border-territory text-territory'}`}>
                       {selectedTerritory.tier}
@@ -309,23 +355,46 @@ const WorldMap = () => {
                     <span>{selectedTerritory.applicants} Applicants</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-accent" />
-                    <span>{selectedTerritory.population.toLocaleString()}</span>
+                    <Building className="w-4 h-4 text-accent" />
+                    <span>{(selectedTerritory.population / 1000000).toFixed(1)}M people</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Flag className="w-4 h-4 text-muted-foreground" />
+                    <span>{selectedTerritory.country}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-muted-foreground" />
+                    <span>{selectedTerritory.continent}</span>
                   </div>
                 </div>
 
-                <Badge 
-                  variant="outline" 
-                  className={`${
-                    selectedTerritory.tier === 'metropolis' 
-                      ? 'border-election text-election' 
-                      : selectedTerritory.tier === 'major' 
-                      ? 'border-gold text-gold' 
-                      : 'border-territory text-territory'
-                  }`}
-                >
-                  {selectedTerritory.tier.toUpperCase()} CITY
-                </Badge>
+                <div className="flex gap-2 flex-wrap">
+                  <Badge 
+                    variant="outline" 
+                    className={`${
+                      selectedTerritory.tier === 'metropolis' 
+                        ? 'border-election text-election' 
+                        : selectedTerritory.tier === 'major' 
+                        ? 'border-gold text-gold' 
+                        : 'border-territory text-territory'
+                    }`}
+                  >
+                    {selectedTerritory.tier.toUpperCase()} CITY
+                  </Badge>
+                  
+                  {selectedTerritory.isCapital && (
+                    <Badge variant="outline" className="border-primary text-primary">
+                      CAPITAL
+                    </Badge>
+                  )}
+                  
+                  {selectedTerritory.cryptoFriendly && (
+                    <Badge variant="outline" className="border-gold text-gold">
+                      <Zap className="w-3 h-3 mr-1" />
+                      CRYPTO FRIENDLY
+                    </Badge>
+                  )}
+                </div>
 
                 {selectedTerritory.governor && (
                   <div className="p-3 bg-gradient-to-r from-gold/20 to-gold/10 rounded-lg border border-gold/30 animate-glow-pulse">
@@ -389,7 +458,12 @@ const WorldMap = () => {
               <CardContent>
                 <div className="text-center text-muted-foreground py-8">
                   <MapPin className="w-12 h-12 mx-auto mb-4 opacity-50 animate-hologram" />
-                  <p>Click on a territory marker or search for a city to view election details</p>
+                  <p>Select a city from the map or use the search above</p>
+                  <div className="mt-4 text-xs space-y-1">
+                    <p>🌍 {getAllCities().length} cities worldwide</p>
+                    <p>⚡ {cryptoStats.cities} crypto-friendly locations</p>
+                    <p>🏛️ {completeWorldDatabase.length} countries</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
