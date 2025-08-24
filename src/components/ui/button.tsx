@@ -18,6 +18,10 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        election: "bg-gradient-to-r from-election to-election/80 text-election-foreground hover:from-election/90 hover:to-election/70 shadow-lg",
+        gold: "bg-gradient-to-r from-gold to-gold/80 text-gold-foreground hover:from-gold/90 hover:to-gold/70 shadow-lg",
+        platinum: "bg-gradient-to-r from-platinum to-platinum/80 text-platinum-foreground hover:from-platinum/90 hover:to-platinum/70 shadow-lg border border-platinum/50",
+        territory: "bg-territory text-territory-foreground hover:bg-territory/80 border border-territory/30",
       },
       size: {
         default: "h-10 px-4 py-2",

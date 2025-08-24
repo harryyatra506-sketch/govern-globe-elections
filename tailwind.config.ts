@@ -61,6 +61,22 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				gold: {
+					DEFAULT: 'hsl(var(--gold))',
+					foreground: 'hsl(var(--gold-foreground))'
+				},
+				platinum: {
+					DEFAULT: 'hsl(var(--platinum))',
+					foreground: 'hsl(var(--platinum-foreground))'
+				},
+				election: {
+					DEFAULT: 'hsl(var(--election))',
+					foreground: 'hsl(var(--election-foreground))'
+				},
+				territory: {
+					DEFAULT: 'hsl(var(--territory))',
+					foreground: 'hsl(var(--territory-foreground))'
 				}
 			},
 			borderRadius: {
