@@ -8,44 +8,60 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 220 30% 98%;
-    --foreground: 220 20% 15%;
+    --background: 215 30% 7%;
+    --foreground: 210 40% 95%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 220 20% 15%;
+    --card: 215 30% 10%;
+    --card-foreground: 210 40% 95%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 15%;
+    --popover: 215 30% 10%;
+    --popover-foreground: 210 40% 95%;
 
-    --primary: 220 60% 25%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 200 100% 60%;
+    --primary-foreground: 215 30% 10%;
 
-    --secondary: 45 100% 85%;
-    --secondary-foreground: 220 60% 25%;
+    --secondary: 160 100% 50%;
+    --secondary-foreground: 215 30% 10%;
 
-    --muted: 220 15% 95%;
-    --muted-foreground: 220 10% 45%;
+    --muted: 215 30% 15%;
+    --muted-foreground: 210 20% 60%;
 
-    --accent: 220 15% 95%;
-    --accent-foreground: 220 60% 25%;
+    --accent: 280 100% 70%;
+    --accent-foreground: 215 30% 10%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    /* Government/Election Theme Colors */
-    --gold: 45 100% 70%;
-    --gold-foreground: 220 60% 25%;
-    --platinum: 220 15% 85%;
-    --platinum-foreground: 220 60% 25%;
-    --election: 220 80% 45%;
-    --election-foreground: 0 0% 98%;
-    --territory: 120 40% 88%;
-    --territory-foreground: 120 40% 25%;
+    /* Futuristic Colors */
+    --neon-blue: 200 100% 60%;
+    --neon-cyan: 180 100% 50%;
+    --neon-purple: 280 100% 70%;
+    --neon-green: 120 100% 50%;
+    --dark-bg: 215 30% 7%;
+    --dark-surface: 215 30% 10%;
+    --grid-color: 200 100% 60%;
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(220 80% 35%));
-    --gradient-gold: linear-gradient(135deg, hsl(var(--gold)), hsl(35 100% 60%));
-    --gradient-platinum: linear-gradient(135deg, hsl(var(--platinum)), hsl(220 20% 90%));
+    /* Gold/Platinum kept but enhanced */
+    --gold: 45 100% 60%;
+    --gold-foreground: 215 30% 10%;
+    --platinum: 210 40% 80%;
+    --platinum-foreground: 215 30% 10%;
+    --election: 280 100% 60%;
+    --election-foreground: 215 30% 10%;
+    --territory: 160 60% 50%;
+    --territory-foreground: 215 30% 10%;
+
+    /* Futuristic Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--neon-blue)), hsl(var(--neon-cyan)));
+    --gradient-neon: linear-gradient(135deg, hsl(var(--neon-purple)), hsl(var(--neon-blue)));
+    --gradient-gold: linear-gradient(135deg, hsl(var(--gold)), hsl(25 100% 50%));
+    --gradient-platinum: linear-gradient(135deg, hsl(var(--platinum)), hsl(200 40% 70%));
+    --gradient-surface: linear-gradient(135deg, hsl(var(--dark-surface)), hsl(215 30% 12%));
+    
+    /* Glow Effects */
+    --glow-blue: 0 0 20px hsl(var(--neon-blue) / 0.5);
+    --glow-purple: 0 0 20px hsl(var(--neon-purple) / 0.5);
+    --glow-green: 0 0 20px hsl(var(--neon-green) / 0.5);
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
