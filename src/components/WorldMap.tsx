@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Users, Crown, MapPin, Filter, Globe, Zap, TrendingUp, Building, Flag } from 'lucide-react';
+import { Users, Crown, MapPin, Filter, Globe, Zap, TrendingUp, Building, Flag, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -32,6 +32,8 @@ const WorldMap = () => {
   const [cityFilter, setCityFilter] = useState<'all' | 'elections' | 'governors' | 'crypto'>('all');
   const [user] = useState<User>({ name: 'John Doe', tier: 'platinum', referrals: 150 });
   const [zoomLevel, setZoomLevel] = useState(1);
+  const [mapCenter, setMapCenter] = useState({ x: 50, y: 50 });
+  const [clickedTerritory, setClickedTerritory] = useState<string | null>(null);
 
   // Filter cities based on filters
   const getFilteredCities = (): CityData[] => {
@@ -63,7 +65,8 @@ const WorldMap = () => {
 
   const handleCitySelect = (city: CityData) => {
     setSelectedTerritory(city);
-    setZoomLevel(2);
+    setZoomLevel(2.5);
+    setMapCenter({ x: city.coordinates.x, y: city.coordinates.y });
   };
 
   const handleCountrySelect = (country: CountryData) => {
@@ -76,7 +79,25 @@ const WorldMap = () => {
 
   const handleTerritoryClick = (city: CityData) => {
     setSelectedTerritory(city);
-    setZoomLevel(2);
+    setZoomLevel(2.5);
+    setMapCenter({ x: city.coordinates.x, y: city.coordinates.y });
+    setClickedTerritory(city.id);
+    // Remove the clicked animation after a short delay
+    setTimeout(() => setClickedTerritory(null), 800);
+  };
+
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(prev + 0.5, 4));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(prev - 0.5, 0.5));
+  };
+
+  const handleResetView = () => {
+    setZoomLevel(1);
+    setMapCenter({ x: 50, y: 50 });
+    setSelectedTerritory(null);
   };
 
   const getAvailableCountries = () => {
@@ -232,6 +253,38 @@ const WorldMap = () => {
                 <Globe className="w-5 h-5 text-primary animate-glow-pulse" />
                 Global Electoral Map
                 <div className="flex items-center gap-2 ml-auto">
+                  {/* Zoom Controls */}
+                  <div className="flex items-center gap-1 mr-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleZoomOut}
+                      disabled={zoomLevel <= 0.5}
+                      className="h-8 w-8 p-0 bg-card/50 border-primary/30 hover:bg-primary/10"
+                    >
+                      <ZoomOut className="w-3 h-3" />
+                    </Button>
+                    <span className="text-xs text-muted-foreground px-2 min-w-12 text-center">
+                      {Math.round(zoomLevel * 100)}%
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleZoomIn}
+                      disabled={zoomLevel >= 4}
+                      className="h-8 w-8 p-0 bg-card/50 border-primary/30 hover:bg-primary/10"
+                    >
+                      <ZoomIn className="w-3 h-3" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleResetView}
+                      className="h-8 w-8 p-0 bg-card/50 border-accent/30 hover:bg-accent/10 ml-1"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                    </Button>
+                  </div>
                   <Badge variant="outline" className="text-xs border-primary/50">
                     {filteredCities.length} cities
                   </Badge>
@@ -243,8 +296,12 @@ const WorldMap = () => {
             </CardHeader>
             <CardContent>
               <div 
-                className="relative w-full h-96 bg-cover bg-center rounded-lg border border-primary/30 overflow-hidden shadow-2xl"
-                style={{ backgroundImage: `url(${futuristicWorldMap})` }}
+                className="relative w-full h-[600px] bg-cover bg-center rounded-lg border border-primary/30 overflow-hidden shadow-2xl cursor-move"
+                style={{ 
+                  backgroundImage: `url(${futuristicWorldMap})`,
+                  backgroundSize: `${100 * zoomLevel}%`,
+                  backgroundPosition: `${50 - (mapCenter.x - 50) * (zoomLevel - 1)}% ${50 - (mapCenter.y - 50) * (zoomLevel - 1)}%`
+                }}
               >
                 {/* Holographic overlay */}
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-accent/20 animate-hologram"></div>
@@ -262,46 +319,63 @@ const WorldMap = () => {
                 </div>
                 
                 {/* Territory Markers */}
-                {filteredCities.map((city) => (
-                  <button
-                    key={city.id}
-                    onClick={() => handleTerritoryClick(city)}
-                    className={`absolute transform -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/80 shadow-lg transition-all duration-300 hover:scale-150 hover:shadow-xl group ${
-                      city.tier === 'metropolis' ? 'w-8 h-8' : city.tier === 'major' ? 'w-6 h-6' : 'w-4 h-4'
-                    } ${
-                      city.hasElection 
-                        ? `bg-gradient-to-r ${getTierColor(city.tier)} animate-glow-pulse shadow-election/50` 
-                        : city.governor 
-                        ? 'bg-gradient-to-r from-gold to-gold/80 animate-glow-pulse shadow-gold/50' 
-                        : `bg-gradient-to-r ${getTierColor(city.tier)} hover:shadow-territory/50`
-                    }`}
-                    style={{
-                      left: `${city.coordinates.x}%`,
-                      top: `${city.coordinates.y}%`,
-                    }}
-                    title={`${city.name}, ${city.country}`}
-                  >
-                    {/* Inner glow effect */}
-                    <div className="absolute inset-1 rounded-full bg-white/20 animate-hologram"></div>
-                    
-                    {/* Population indicator for metropolis */}
-                    {city.tier === 'metropolis' && (
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full animate-glow-pulse"></div>
-                    )}
-                    
-                    {/* Crypto indicator */}
-                    {city.cryptoFriendly && (
-                      <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-gold rounded-full animate-hologram"></div>
-                    )}
-                  </button>
-                ))}
+                {filteredCities.map((city) => {
+                  const adjustedX = 50 + (city.coordinates.x - 50) * zoomLevel - (mapCenter.x - 50) * (zoomLevel - 1);
+                  const adjustedY = 50 + (city.coordinates.y - 50) * zoomLevel - (mapCenter.y - 50) * (zoomLevel - 1);
+                  const isVisible = adjustedX >= -5 && adjustedX <= 105 && adjustedY >= -5 && adjustedY <= 105;
+                  const isClicked = clickedTerritory === city.id;
+                  
+                  if (!isVisible) return null;
+                  
+                  return (
+                    <button
+                      key={city.id}
+                      onClick={() => handleTerritoryClick(city)}
+                      className={`absolute transform -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/80 shadow-lg transition-all duration-500 hover:scale-150 hover:shadow-xl group ${
+                        city.tier === 'metropolis' ? 'w-8 h-8' : city.tier === 'major' ? 'w-6 h-6' : 'w-4 h-4'
+                      } ${
+                        city.hasElection 
+                          ? `bg-gradient-to-r ${getTierColor(city.tier)} animate-glow-pulse shadow-election/50` 
+                          : city.governor 
+                          ? 'bg-gradient-to-r from-gold to-gold/80 animate-glow-pulse shadow-gold/50' 
+                          : `bg-gradient-to-r ${getTierColor(city.tier)} hover:shadow-territory/50`
+                      } ${
+                        isClicked ? 'animate-bounce scale-150 shadow-2xl shadow-primary/50' : ''
+                      }`}
+                      style={{
+                        left: `${adjustedX}%`,
+                        top: `${adjustedY}%`,
+                        transform: `translate(-50%, -50%) scale(${zoomLevel * (isClicked ? 1.5 : 1)})`,
+                      }}
+                      title={`${city.name}, ${city.country}`}
+                    >
+                      {/* Inner glow effect */}
+                      <div className="absolute inset-1 rounded-full bg-white/20 animate-hologram"></div>
+                      
+                      {/* Population indicator for metropolis */}
+                      {city.tier === 'metropolis' && (
+                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full animate-glow-pulse"></div>
+                      )}
+                      
+                      {/* Crypto indicator */}
+                      {city.cryptoFriendly && (
+                        <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-gold rounded-full animate-hologram"></div>
+                      )}
+                      
+                      {/* Click ripple effect */}
+                      {isClicked && (
+                        <div className="absolute inset-0 rounded-full border-2 border-primary animate-ping"></div>
+                      )}
+                    </button>
+                  );
+                })}
                 
                 {selectedTerritory && (
                   <div 
-                    className="absolute transform -translate-x-1/2 -translate-y-full bg-card/90 backdrop-blur-md border border-primary/30 rounded-lg p-3 shadow-xl shadow-primary/20 z-10 animate-glow-pulse min-w-48"
+                    className="absolute transform -translate-x-1/2 -translate-y-full bg-card/95 backdrop-blur-md border border-primary/30 rounded-lg p-3 shadow-xl shadow-primary/20 z-10 animate-fade-in min-w-48"
                     style={{
-                      left: `${selectedTerritory.coordinates.x}%`,
-                      top: `${selectedTerritory.coordinates.y}%`,
+                      left: `${50 + (selectedTerritory.coordinates.x - 50) * zoomLevel - (mapCenter.x - 50) * (zoomLevel - 1)}%`,
+                      top: `${50 + (selectedTerritory.coordinates.y - 50) * zoomLevel - (mapCenter.y - 50) * (zoomLevel - 1)}%`,
                     }}
                   >
                     <div className="text-sm font-semibold text-primary flex items-center gap-2">
